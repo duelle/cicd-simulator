@@ -22,11 +22,13 @@ worker_pattern = '1234567891'
 duration_avg_pattern = '#duration_avg#'
 duration_sd_pattern = '#duration_sd#'
 
-job_range = range(1, 22, 5)
-worker_range = range(1, 12, 2)
+job_range = range(1, 2, 2)
+worker_range = range(1, 2, 2)
 arrival_range = [0.000085415]
 duration_avg_range = [437]
 duration_sd_range = [410]
+
+base_dir = r'/tmp'
 
 
 def create_settings():
@@ -99,23 +101,25 @@ def run_experiments(config_files):
         print(f'<< End: Processing config {cfg}.')
 
 
-def docker_run(config_dir):
+def docker_run(config):
     docker_image = 'qpme_experiment:latest'
     before_time = datetime.datetime.now()
-    subprocess.run(['docker', 'run', '-v', f'{config_dir}:/tmp/experiment', docker_image])
+    subprocess.run(['docker', 'run', '-v', f'{base_dir}/{config}:/tmp/experiment', docker_image])
     after_time = datetime.datetime.now()
     time_diff = after_time - before_time
     print(time_diff)
+    return config, time_diff
+
 
 def run_docker_experiments(config_files):
     docker_image = 'qpme_experiment:latest'
     experiments = {}
-    config_dirs = []
+    configs = []
 
     for cfg in config_files:
         filename = os.path.basename(cfg)
         f_name, f_ext = os.path.splitext(filename)
-        current_config_dir = f'/tmp/{f_name}'
+        current_config_dir = f'{base_dir}/{f_name}'
         current_config_file = 'in.qpe'
         current_log_file = 'out.log'
         os.makedirs(current_config_dir, exist_ok=True)
@@ -127,19 +131,22 @@ def run_docker_experiments(config_files):
         # time_diff = after_time - before_time
         # print(time_diff)
 
-        config_dirs.append(current_config_dir)
+        configs.append(f_name)
 
         experiments[f_name] = {
             'basedir': current_config_dir,
             'name': f_name,
             'config': current_config_file,
             'log': current_log_file,
-            # 'stats': {} + Operational Law (build duration), Execution time (simulation)
+            'stats': {} # + Operational Law (build duration), Execution time (simulation)
         }
 
     pool = mp.Pool(processes=5)
-    pool.map(docker_run, config_dirs)
+    timings = pool.map(docker_run, configs)
     pool.close()
+
+    for k, v in timings:
+        experiments[k]['stats']['duration'] = v
 
     return experiments
 
@@ -152,10 +159,11 @@ if __name__ == "__main__":
     experiments = run_docker_experiments(config_files)
     csv_out = '/tmp/plot_data.csv'
     entry_set = [('config', ['name']),
+                 ('duration', ['stats', 'duration']),
                  ('workers', ['yaml', 'config', 'workers']),
                  ('jobs', ['yaml', 'config', 'jobs']),
                  # ('value', ['yaml', 'doqp', 'Stage', 'color', 'token', 'deptThrPut'])]
-                 ('value', ['yaml', 'probe', 'RT', 'color', 'token', 'meanST'])]
+                 ('value', ['yaml', 'probe', 'RT', 'color', 'token', 'meanST']),]
     header_string = ';'.join([entry[0] for entry in entry_set])
     header = [entry[0] for entry in entry_set]
 
@@ -178,7 +186,7 @@ if __name__ == "__main__":
 
     pd_df = pd.DataFrame(np.array(data_rows), columns=header)
 
-    # pprint.pprint(pd_df)
+    pprint.pprint(pd_df)
     # pd_df.plot(x='jobs', y='value', kind='scatter')
     pd_df.to_csv('/tmp/plot_data.csv', index=False)
     # plt.show()
