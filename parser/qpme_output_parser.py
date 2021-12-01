@@ -7,9 +7,13 @@ import yaml
 
 
 class QPMEOutputParser:
+
+    _log_file = ''
+
     def __init__(self, base_dir, log_file, output_file):
 
         log_file_path = f'{base_dir}/{log_file}'
+        self._log_file = log_file_path
         output_file_path = f'{base_dir}/{output_file}'
 
         result = {
@@ -119,8 +123,10 @@ class QPMEOutputParser:
                 elif entry == 'SteadyStateStatistics':
                     steady_state_statistics = True
                 elif steady_state_statistics:
-                    # print(split_entry)
-                    key_result['steady_state_statistics'][split_entry[0]] = split_entry[1]
+                    try:
+                        key_result['steady_state_statistics'][split_entry[0]] = split_entry[1]
+                    except IndexError as e:
+                        print(f'[{self._log_file}] IndexError: {entry}: {split_entry}')
                 elif not color:
                     key_result[split_entry[0]] = float(split_entry[1])
                 elif color:

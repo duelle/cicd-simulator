@@ -22,8 +22,8 @@ worker_pattern = '1234567891'
 duration_avg_pattern = '#duration_avg#'
 duration_sd_pattern = '#duration_sd#'
 
-job_range = range(1, 2, 2)
-worker_range = range(1, 2, 2)
+job_range = range(1, 6, 2)
+worker_range = range(1, 6, 2)
 arrival_range = [0.000085415]
 duration_avg_range = [437]
 duration_sd_range = [410]
@@ -141,7 +141,7 @@ def run_docker_experiments(config_files):
             'stats': {} # + Operational Law (build duration), Execution time (simulation)
         }
 
-    pool = mp.Pool(processes=5)
+    pool = mp.Pool()
     timings = pool.map(docker_run, configs)
     pool.close()
 
@@ -162,8 +162,11 @@ if __name__ == "__main__":
                  ('duration', ['stats', 'duration']),
                  ('workers', ['yaml', 'config', 'workers']),
                  ('jobs', ['yaml', 'config', 'jobs']),
+                 ('workers_meanTkPop', ['yaml', 'ordp', 'Workers', 'color', 'token', 'meanTkPop']),
+                 ('arrival_rate', ['yaml', 'queue', 'build_arrival', 'totArrivThrPut']),
                  # ('value', ['yaml', 'doqp', 'Stage', 'color', 'token', 'deptThrPut'])]
-                 ('value', ['yaml', 'probe', 'RT', 'color', 'token', 'meanST']),]
+                 ('value', ['yaml', 'probe', 'RT', 'color', 'token', 'meanST']),
+                 ('utilization_law', None)]
     header_string = ';'.join([entry[0] for entry in entry_set])
     header = [entry[0] for entry in entry_set]
 
@@ -177,13 +180,18 @@ if __name__ == "__main__":
 
         results = []
         for entry in entry_set:
-            entry_path = entry[1]
-            entry_content = experiments[e]
-            for element in entry_path:
-                entry_content = entry_content[element]
-            results.append(str(entry_content))
+            if entry[1]:
+                entry_path = entry[1]
+                entry_content = experiments[e]
+                for element in entry_path:
+                    entry_content = entry_content[element]
+                results.append(str(entry_content))
+        results.append(
+            # ((#Workers - MeanTokPop) / #Jobs) / #ArrivalRate
+            ((float(results[2]) - float(results[4]))/float(results[3]))/float(results[5]))
         data_rows.append(results)
 
+    pprint.pp(experiments)
     pd_df = pd.DataFrame(np.array(data_rows), columns=header)
 
     pprint.pprint(pd_df)
