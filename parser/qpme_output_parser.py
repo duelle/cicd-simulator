@@ -56,22 +56,21 @@ class QPMEOutputParser:
 
         for key in result:
             if key == 'Queue':
-                output['queue'] = QPMEOutputParser.queue_handler(result[key])
+                output['queue'] = self.queue_handler(result[key])
             elif key == 'Probe':
-                output['probe'] = QPMEOutputParser.probe_handler(result[key])
+                output['probe'] = self.probe_handler(result[key])
             elif key == 'Queue of Queueing Place':
-                output['qoqp'] = QPMEOutputParser.queue_of_queueing_place_handler(result[key])
+                output['qoqp'] = self.queue_of_queueing_place_handler(result[key])
             elif key == 'Ordinary Place':
-                output['ordp'] = QPMEOutputParser.ordinary_place_handler(result[key])
+                output['ordp'] = self.ordinary_place_handler(result[key])
             elif key == 'Depository of Queueing Place':
-                output['doqp'] = QPMEOutputParser.depository_of_queueing_place_handler(result[key])
+                output['doqp'] = self.depository_of_queueing_place_handler(result[key])
 
         with open(output_file_path, 'w') as out_yaml:
             out_yaml.write(yaml.dump(output))
 
     # queue
-    @staticmethod
-    def queue_handler(items):
+    def queue_handler(self, items):
         result = {}
         for key in items:
             key_result = {}
@@ -86,8 +85,7 @@ class QPMEOutputParser:
         return result
 
     # probe
-    @staticmethod
-    def probe_handler(items):
+    def probe_handler(self, items):
         result = {}
         for key in items:
 
@@ -138,8 +136,7 @@ class QPMEOutputParser:
         return result
 
     # queue of queueing place
-    @staticmethod
-    def queue_of_queueing_place_handler(items):
+    def queue_of_queueing_place_handler(self, items):
         result = {}
         for key in items:
 
@@ -147,7 +144,7 @@ class QPMEOutputParser:
             key_result = {'color': {}, 'steady_state_statistics': {}}
 
             # Sanitize string and split it
-            kv_pairs = QPMEOutputParser.sanitization_chain(items[key])
+            kv_pairs = self.sanitization_chain(items[key])
 
             # Default status to not colored and no current_color
             color = None
@@ -181,8 +178,7 @@ class QPMEOutputParser:
         return result
 
     # ordinary place
-    @staticmethod
-    def ordinary_place_handler(items):
+    def ordinary_place_handler(self, items):
         result = {}
         for key in items:
 
@@ -213,8 +209,7 @@ class QPMEOutputParser:
         return result
 
     # depository of queueing place
-    @staticmethod
-    def depository_of_queueing_place_handler(items):
+    def depository_of_queueing_place_handler(self, items):
         result = {}
         for key in items:
 

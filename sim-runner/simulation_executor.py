@@ -163,10 +163,15 @@ if __name__ == "__main__":
                  ('workers', ['yaml', 'config', 'workers']),
                  ('jobs', ['yaml', 'config', 'jobs']),
                  ('workers_meanTkPop', ['yaml', 'ordp', 'Workers', 'color', 'token', 'meanTkPop']),
+                 ('ordp_jobs_meanTkPop', ['yaml', 'ordp', 'Jobs', 'color', 'token', 'meanTkPop']),
+                 ('doqp_stage_meanTkPop', ['yaml', 'doqp', 'Stage', 'color', 'token', 'meanTkPop']),
+                 ('qoqp_stage_meanTkPop', ['yaml', 'qoqp', 'Stage', 'color', 'token', 'meanTkPop']),
                  ('arrival_rate', ['yaml', 'queue', 'build_arrival', 'totArrivThrPut']),
                  # ('value', ['yaml', 'doqp', 'Stage', 'color', 'token', 'deptThrPut'])]
-                 ('value', ['yaml', 'probe', 'RT', 'color', 'token', 'meanST']),
-                 ('utilization_law', None)]
+                 # ('value', ['yaml', 'probe', 'RT', 'color', 'token', 'meanST']),
+                 ('utilization', None),
+                 ('build_duration', None),
+                ]
     header_string = ';'.join([entry[0] for entry in entry_set])
     header = [entry[0] for entry in entry_set]
 
@@ -186,9 +191,21 @@ if __name__ == "__main__":
                 for element in entry_path:
                     entry_content = entry_content[element]
                 results.append(str(entry_content))
+        # ((#Workers - MeanTokPop) / #Jobs) / #ArrivalRate
+        # ((float(results[2]) - float(results[4]))/float(results[3]))/float(results[5]))
         results.append(
-            # ((#Workers - MeanTokPop) / #Jobs) / #ArrivalRate
-            ((float(results[2]) - float(results[4]))/float(results[3]))/float(results[5]))
+            # 1-(WorkerTokens/#Worker)
+            1-(float(results[4])/float(results[2])))
+
+        results.append(
+            # TokenPop(Jobs/Stage)/#Jobs/ArrivalRate
+            (
+                (
+                    float(results[5]) + float(results[6]) + float(results[7])
+                )
+                / float(results[3]) / float(results[8])
+            )
+        )
         data_rows.append(results)
 
     pprint.pp(experiments)
