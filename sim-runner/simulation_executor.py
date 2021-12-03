@@ -208,7 +208,7 @@ if __name__ == "__main__":
         )
         data_rows.append(results)
 
-    pprint.pp(experiments)
+    # pprint.pprint(experiments)
     pd_df = pd.DataFrame(np.array(data_rows), columns=header)
 
     pprint.pprint(pd_df)
