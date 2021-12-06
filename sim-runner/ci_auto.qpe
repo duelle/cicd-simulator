@@ -47,7 +47,7 @@
         </color-ref> 
       </color-refs> 
     </place>  
-    <place departure-discipline="NORMAL" id="_1581064283790" name="Stage" queue-ref="_1581064283791" xsi:type="queueing-place"> 
+    <place departure-discipline="NORMAL" id="_1581064283790" name="Stage" xsi:type="queueing-place" queue-ref="_1581064283791"> 
       <meta-attributes> 
         <meta-attribute location-x="592" location-y="184" xsi:type="location-attribute"/>  
         <meta-attribute id="_1581065789576" xsi:type="simqpn-place-configuration" configuration-name="batch" statsLevel="2"/>  
@@ -114,6 +114,20 @@
   </connections>  
   <probes> 
     <probe end-place-id="_1581064283790" end-trigger="exit" id="_1581068980521" name="RT" start-trigger="entry" start-place-id="_1581064283782"> 
+      <meta-attributes> 
+        <meta-attribute id="_1581069274002" xsi:type="simqpn-place-configuration" configuration-name="batch" statsLevel="3"/>  
+        <meta-attribute xsi:type="simqpn-place-configuration" configuration-name="new configuration 1" id="_1596703949906" statsLevel="5"/> 
+      </meta-attributes>  
+      <color-refs> 
+        <color-ref color-id="_1581064283772" id="_1581069274003" xsi:type="probe-color-reference"> 
+          <meta-attributes> 
+            <meta-attribute xsi:type="simqpn-welch-color-configuration" configuration-name="new configuration 1" id="_1596703949909" minObsrv="500" maxObsrv="10000"/>  
+            <meta-attribute xsi:type="simqpn-batch-means-color-configuration" configuration-name="batch" id="_1634727477581" signLev="0.05" reqAbsPrc="50" reqRelPrc="0.05" batchSize="200" minBatches="60" numBMeansCorlTested="50" bucketSize="100.0" maxBuckets="1000"/> 
+          </meta-attributes> 
+        </color-ref> 
+      </color-refs> 
+    </probe>  
+    <probe start-trigger="entry" end-trigger="exit" id="_1638809027691" name="PT" start-place-id="_1581064283790" end-place-id="_1581064283790">
       <meta-attributes> 
         <meta-attribute id="_1581069274002" xsi:type="simqpn-place-configuration" configuration-name="batch" statsLevel="3"/>  
         <meta-attribute xsi:type="simqpn-place-configuration" configuration-name="new configuration 1" id="_1596703949906" statsLevel="5"/> 
