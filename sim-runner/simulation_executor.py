@@ -5,20 +5,19 @@ import pprint
 import re
 import shutil
 import subprocess
+import yaml
 
-import matplotlib.pyplot as plt
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
-import yaml
 
 from parser.qpme_output_parser import QPMEOutputParser
 
 
 class SimulationExecutor:
 
+    base_dir = r'/tmp'
     config_template = 'ci_auto.qpe'
-
     arrival_pattern = '#exp_arrival#'
     job_pattern = '1234567890'
     worker_pattern = '1234567891'
@@ -26,38 +25,19 @@ class SimulationExecutor:
     duration_sd_pattern = '#duration_sd#'
 
     # job_range = range(1, 41, 5)
-    job_range = [1]
+    # job_range = [1]
     # worker_range = range(1, 20, 1)
-    worker_range = [1]
-    arrival_range = [0.000085415]
-    duration_range = [
-        1,  # MIN
-        183,  # Q25
-        283,  # MEDIAN
-        435.584,  # AVG
-        566,  # Q75
-        9282,  # MAX
-    ]
-    duration_sd_range = [410.8]
-    base_dir = r'/tmp'
-
-    def create_settings(self):
-        configs = {}
-        i = 0
-        for job_value in self.job_range:
-            for worker_value in self.worker_range:
-                for arrival_value in self.arrival_range:
-                    for duration_value in self.duration_range:
-                        for duration_sd_value in self.duration_sd_range:
-                            configs[i] = {
-                                'jobs': str(job_value),
-                                'workers': str(worker_value),
-                                'arrival': str(("%.17f" % arrival_value).rstrip('0').rstrip('.')),
-                                'duration_avg': str(duration_value),
-                                'duration_sd': str(duration_sd_value),
-                            }
-                            i += 1
-        return configs
+    # worker_range = [1]
+    # arrival_range = [0.000085415]
+    # duration_range = [
+    #     1,  # MIN
+    #     183,  # Q25
+    #     283,  # MEDIAN
+    #     435.584,  # AVG
+    #     566,  # Q75
+    #     9282,  # MAX
+    # ]
+    # duration_sd_range = [410.8]
 
     @staticmethod
     def create_settings_from_array(settings_array: np.ndarray) -> {}:
@@ -98,31 +78,6 @@ class SimulationExecutor:
                 config_files.append(os.path.abspath(config_file_name))
         return config_files
 
-    def run_experiments(config_files):
-        simqpn_cwd = '/opt/qpme'
-
-        for cfg in config_files:
-            print(f'>> Begin: Processing config {cfg}.')
-            before_time = datetime.datetime.now()
-            results = subprocess.run(['./SimQPN.sh', '-r', 'batch', cfg], capture_output=True, cwd=simqpn_cwd, timeout=360)
-            after_time = datetime.datetime.now()
-            # time.sleep(5)
-            time_diff = after_time - before_time
-            log_file = f'{cfg}.log'
-            with open(log_file, 'a') as log_out:
-                log_out.write(f'return_code: {results.returncode}\n')
-                print(f'  Return code: {results.returncode}')
-
-                log_out.write(f'processing_time: {time_diff}\n')
-                print(f'  SimQPN took {time_diff} to run this configuration.')
-
-                log_out.write('\nSTDOUT:\n')
-                log_out.write(str(results.stdout.decode()))
-                log_out.write('\nSTDERR:\n')
-                log_out.write(str(results.stderr.decode()))
-                print(f'  Wrote log to {log_file}.')
-            print(f'<< End: Processing config {cfg}.')
-
     @staticmethod
     def docker_run(config):
         docker_image = 'qpme_experiment:latest'
@@ -156,7 +111,7 @@ class SimulationExecutor:
                 'name': f_name,
                 'config': current_config_file,
                 'log': current_log_file,
-                'stats': {} # + Operational Law (build duration), Execution time (simulation)
+                'stats': {}  # + Operational Law (build duration), Execution time (simulation)
             }
 
         pool = mp.Pool()
@@ -208,7 +163,8 @@ class SimulationExecutor:
             results.append(1 - (float(results[4]) / float(results[2])))
 
             # TokenPop(Jobs/Stage)/#Jobs/ArrivalRate
-            results.append((float(results[5]) + float(results[6]) + float(results[7]))/float(results[3])/float(results[8]))
+            results.append((float(results[5]) + float(results[6])
+                            + float(results[7]))/float(results[3])/float(results[8]))
 
             # 'credits': (mean stage duration * stage arrival count)
             results.append(float(results[9]) * float(results[10]))
@@ -217,89 +173,12 @@ class SimulationExecutor:
 
         return pd.DataFrame(np.array(data_rows), columns=header)
 
-
-    def do_run(param_array: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def do_run(param_array: np.ndarray) -> pd.DataFrame:
         settings = SimulationExecutor.create_settings_from_array(param_array)
         config_files = SimulationExecutor.create_config_files(settings)
         experiments = SimulationExecutor.run_docker_experiments(config_files)
         return SimulationExecutor.parse_experiments(experiments)
-
-    @staticmethod
-    def legacy_execution():
-        before_time = datetime.datetime.now()
-        settings = SimulationExecutor.create_settings()
-        config_files = SimulationExecutor.create_config_files(settings)
-        pprint.pprint(config_files)
-        experiments = SimulationExecutor.run_docker_experiments(config_files)
-        csv_out = '/tmp/plot_data.csv'
-        entry_set = [('config', ['name']), #0
-                     ('duration', ['stats', 'duration']), #1
-                     ('workers', ['yaml', 'config', 'workers']), #2
-                     ('jobs', ['yaml', 'config', 'jobs']), #3
-                     ('workers_meanTkPop', ['yaml', 'ordp', 'Workers', 'color', 'token', 'meanTkPop']), #4
-                     ('ordp_jobs_meanTkPop', ['yaml', 'ordp', 'Jobs', 'color', 'token', 'meanTkPop']), #5
-                     ('doqp_stage_meanTkPop', ['yaml', 'doqp', 'Stage', 'color', 'token', 'meanTkPop']), #6
-                     ('qoqp_stage_meanTkPop', ['yaml', 'qoqp', 'Stage', 'color', 'token', 'meanTkPop']), #7
-                     ('arrival_rate', ['yaml', 'queue', 'build_arrival', 'totArrivThrPut']), #8
-                     ('stage_duration', ['yaml', 'probe', 'PT', 'color', 'token', 'meanST']), #9
-                     ('stage_arrival_count', ['yaml', 'qoqp', 'Stage', 'color', 'token', 'arrivCnt']), #10
-                     # ('value', ['yaml', 'doqp', 'Stage', 'color', 'token', 'deptThrPut'])]
-                     # ('value', ['yaml', 'probe', 'RT', 'color', 'token', 'meanST']),
-                     ('utilization', None),
-                     ('build_duration', None),
-                     ('credit_usage', None),
-                     ]
-        # header_string = ';'.join([entry[0] for entry in entry_set])
-        header = [entry[0] for entry in entry_set]
-
-        data_rows = []
-
-        for e in experiments:
-            experiments[e]['yaml_file'] = 'out_parsed.yml'
-            QPMEOutputParser(experiments[e]['basedir'], experiments[e]['log'], experiments[e]['yaml_file'])
-            with open(f'''{experiments[e]['basedir']}/{experiments[e]['yaml_file']}''') as yaml_content:
-                experiments[e]['yaml'] = yaml.safe_load(yaml_content)
-
-            results = []
-            for entry in entry_set:
-                if entry[1]:
-                    entry_path = entry[1]
-                    entry_content = experiments[e]
-                    for element in entry_path:
-                        entry_content = entry_content[element]
-                    results.append(str(entry_content))
-            # ((#Workers - MeanTokPop) / #Jobs) / #ArrivalRate
-            # ((float(results[2]) - float(results[4]))/float(results[3]))/float(results[5]))
-            results.append(
-                # 1-(WorkerTokens/#Worker)
-                1-(float(results[4])/float(results[2])))
-
-            results.append(
-                # TokenPop(Jobs/Stage)/#Jobs/ArrivalRate
-                (
-                    (
-                        float(results[5]) + float(results[6]) + float(results[7])
-                    )
-                    / float(results[3]) / float(results[8])
-                )
-            )
-
-            results.append(
-                # 'credits': (mean stage duration * stage arrival count)
-                (float(results[9]) * float(results[10]))
-            )
-            data_rows.append(results)
-
-        pprint.pprint(experiments)
-        pd_df = pd.DataFrame(np.array(data_rows), columns=header)
-
-        pprint.pprint(pd_df)
-        # pd_df.plot(x='jobs', y='value', kind='scatter')
-        pd_df.to_csv('/tmp/plot_data.csv', index=False)
-        # plt.show()
-        after_time = datetime.datetime.now()
-        time_diff = after_time - before_time
-        print(f'> Total time > {time_diff}')
 
 
 if __name__ == "__main__":
