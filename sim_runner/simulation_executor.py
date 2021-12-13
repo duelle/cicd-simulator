@@ -10,6 +10,7 @@ import yaml
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
 from parser.qpme_output_parser import QPMEOutputParser
 
@@ -17,7 +18,7 @@ from parser.qpme_output_parser import QPMEOutputParser
 class SimulationExecutor:
 
     base_dir = r'/tmp'
-    config_template = 'ci_auto.qpe'
+    config_template = Path(__file__).parent / 'ci_auto.qpe'
     arrival_pattern = '#exp_arrival#'
     job_pattern = '1234567890'
     worker_pattern = '1234567891'
@@ -175,6 +176,7 @@ class SimulationExecutor:
 
     @staticmethod
     def do_run(param_array: np.ndarray) -> pd.DataFrame:
+        pprint.pprint(param_array)
         settings = SimulationExecutor.create_settings_from_array(param_array)
         config_files = SimulationExecutor.create_config_files(settings)
         experiments = SimulationExecutor.run_docker_experiments(config_files)
@@ -189,5 +191,7 @@ if __name__ == "__main__":
         [1, 1, 0.000085415, 566, 410.8]
     ])
     result_df = SimulationExecutor.do_run(input_array)
-    result_df.to_csv('/tmp/plot_data.csv', index=False)
-    pprint.pprint(result_df)
+    pprint.pprint(result_df["build_duration"])
+    pprint.pprint(result_df["credit_usage"])
+    #result_df.to_csv('/tmp/plot_data.csv', index=False)
+    #pprint.pprint(result_df)
