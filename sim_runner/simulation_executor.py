@@ -83,7 +83,7 @@ class SimulationExecutor:
     def docker_run(config):
         docker_image = 'qpme_experiment:latest'
         before_time = datetime.datetime.now()
-        subprocess.run(['docker', 'run', '-v', f'{SimulationExecutor.base_dir}/{config}:/tmp/experiment', docker_image])
+        subprocess.run(['docker', 'run', '-m', '8G', '--cpus', '4', '-v', f'{SimulationExecutor.base_dir}/{config}:/tmp/experiment', docker_image])
         after_time = datetime.datetime.now()
         time_diff = after_time - before_time
         print(time_diff)
@@ -176,7 +176,8 @@ class SimulationExecutor:
 
     @staticmethod
     def do_run(param_array: np.ndarray) -> pd.DataFrame:
-        pprint.pprint(param_array)
+        # rows, columns = param_array.shape
+        # print(f'Starting {rows} experiments.')
         settings = SimulationExecutor.create_settings_from_array(param_array)
         config_files = SimulationExecutor.create_config_files(settings)
         experiments = SimulationExecutor.run_docker_experiments(config_files)
@@ -191,7 +192,10 @@ if __name__ == "__main__":
         [1, 1, 0.000085415, 566, 410.8]
     ])
     result_df = SimulationExecutor.do_run(input_array)
-    pprint.pprint(result_df["build_duration"])
-    pprint.pprint(result_df["credit_usage"])
+
+    duration = list(result_df['build_duration'])
+    cusage = list(result_df['credit_usage'])
+    print(duration)
+    print(cusage)
     #result_df.to_csv('/tmp/plot_data.csv', index=False)
     #pprint.pprint(result_df)
