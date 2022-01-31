@@ -25,6 +25,9 @@ class SimulationExecutor:
     duration_avg_pattern = '#duration_avg#'
     duration_sd_pattern = '#duration_sd#'
 
+    default_cpu = 2
+    default_ram = 4
+
     # job_range = range(1, 41, 5)
     # job_range = [1]
     # worker_range = range(1, 20, 1)
@@ -80,13 +83,14 @@ class SimulationExecutor:
         return config_files
 
     @staticmethod
-    def docker_run(config):
+    def docker_run(config, cpus=default_cpu, ram=default_ram, verbose=False):
         docker_image = 'qpme_experiment:latest'
         before_time = datetime.datetime.now()
-        subprocess.run(['docker', 'run', '-m', '8G', '--cpus', '4', '-v', f'{SimulationExecutor.base_dir}/{config}:/tmp/experiment', docker_image])
+        subprocess.run(['docker', 'run', '-m', f'{ram}G', '--cpus', f'{cpus}', '-v', f'{SimulationExecutor.base_dir}/{config}:/tmp/experiment', docker_image])
         after_time = datetime.datetime.now()
         time_diff = after_time - before_time
-        print(time_diff)
+        if verbose:
+            print(time_diff)
         return config, time_diff
 
     @staticmethod
@@ -172,7 +176,8 @@ class SimulationExecutor:
 
             data_rows.append(results)
 
-        return pd.DataFrame(np.array(data_rows), columns=header)
+        df = pd.DataFrame(np.array(data_rows), columns=header)
+        return df
 
     @staticmethod
     def do_run(param_array: np.ndarray) -> pd.DataFrame:

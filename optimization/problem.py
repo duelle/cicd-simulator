@@ -1,6 +1,8 @@
 from pymoo.core.problem import Problem
 from sim_runner.simulation_executor import SimulationExecutor
 
+import numpy as np
+
 
 class PipelineCostResourceProblem(Problem):
 
@@ -13,8 +15,15 @@ class PipelineCostResourceProblem(Problem):
 
     def _evaluate(self, x, out, *args, **kwargs):
         results = SimulationExecutor.do_run(x)
-        out["F"] = list(results["build_duration"]), list(results["credit_usage"])
+        results['build_duration'] = results['build_duration'].astype(float)
+        results['credit_usage'] = results['credit_usage'].astype(float)
+        result_array = np.column_stack((results['build_duration'], results['credit_usage']))
+        out["F"] = result_array
+
+
+        results['utilization'] = results['utilization'].astype(float)
         out["G"] = self._constraint_calculation(results["utilization"])
 
     def _constraint_calculation(self, value):
         return value - self.__constraint_limit
+
