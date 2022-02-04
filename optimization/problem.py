@@ -11,6 +11,7 @@ class PipelineCostResourceProblem(Problem):
         self.__xu: [] = upper_limits
         self.__constraint_limit: float = constraint_limit
 
+        # super().__init__(n_var=5, n_obj=2, n_constr=1, xl=self.__xl, xu=self.__xu)
         super().__init__(n_var=5, n_obj=2, n_constr=1, xl=self.__xl, xu=self.__xu)
 
     def _evaluate(self, x, out, *args, **kwargs):
@@ -19,7 +20,6 @@ class PipelineCostResourceProblem(Problem):
         results['credit_usage'] = results['credit_usage'].astype(float)
         result_array = np.column_stack((results['build_duration'], results['credit_usage']))
         out["F"] = result_array
-
 
         results['utilization'] = results['utilization'].astype(float)
         out["G"] = self._constraint_calculation(results["utilization"])
