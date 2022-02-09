@@ -44,7 +44,15 @@ class SimulationExecutor:
     # duration_sd_range = [410.8]
 
     @staticmethod
-    def create_settings_from_array(settings_array: np.ndarray) -> {}:
+    def set_cpu(cpu):
+        SimulationExecutor.default_cpu = cpu
+
+    @staticmethod
+    def set_ram(ram):
+        SimulationExecutor.default_ram = ram
+
+    @staticmethod
+    def create_settings_from_array(settings_array: np.ndarray, iteration: int) -> {}:
         configs = {}
         i: int = 0
 
@@ -54,7 +62,9 @@ class SimulationExecutor:
                 'workers': str(int(row[1])),
                 'arrival': str(("%.17f" % row[2]).rstrip('0').rstrip('.')),
                 'duration_avg': str(row[3]),
-                'duration_sd': str(row[4]),
+                'duration_sd': str(row[3]/10.0),  # str(row[4]),
+                'cfg_iteration': iteration,
+                'cfg_id': i,
             }
             i += 1
         return configs
@@ -65,8 +75,9 @@ class SimulationExecutor:
         for config_id in configs.keys():
             with open(SimulationExecutor.config_template, 'r') as f_src:
                 config = configs[config_id]
+                iteration = configs[config_id]['cfg_iteration']
                 os.makedirs('/tmp/qpme_configs/', exist_ok=True)
-                config_file_name = f'/tmp/qpme_configs/ci_cfg_{config_id}.qpe'
+                config_file_name = f'/tmp/qpme_configs/ci_cfg_{iteration}_{config_id}.qpe'
                 log_file_name = f'{config_file_name}.log'
                 with open(log_file_name, 'w') as f_dest_log:
                     json.dump(config, f_dest_log)
@@ -86,7 +97,8 @@ class SimulationExecutor:
     def docker_run(config, cpus=default_cpu, ram=default_ram, verbose=False):
         docker_image = 'qpme_experiment:latest'
         before_time = datetime.datetime.now()
-        subprocess.run(['docker', 'run', '-m', f'{ram}G', '--cpus', f'{cpus}', '-v', f'{SimulationExecutor.base_dir}/{config}:/tmp/experiment', docker_image])
+        subprocess.run(['docker', 'run', '-m', f'{ram}G', '--cpus', f'{cpus}', '-v',
+                        f'{SimulationExecutor.base_dir}/{config}:/tmp/experiment', docker_image])
         after_time = datetime.datetime.now()
         time_diff = after_time - before_time
         if verbose:
@@ -95,7 +107,6 @@ class SimulationExecutor:
 
     @staticmethod
     def run_docker_experiments(config_files):
-        docker_image = 'qpme_experiment:latest'
         experiments = {}
         configs = []
 
@@ -132,8 +143,8 @@ class SimulationExecutor:
     def parse_experiments(experiments: {}) -> pd.DataFrame:
         entry_set = [('config', ['name']),  # 0
                      ('duration', ['stats', 'duration']),  # 1
-                     ('workers', ['yaml', 'config', 'workers']),  # 2
-                     ('jobs', ['yaml', 'config', 'jobs']),  # 3
+                     ('jobs', ['yaml', 'config', 'jobs']),  # 2
+                     ('workers', ['yaml', 'config', 'workers']),  # 3
                      ('workers_meanTkPop', ['yaml', 'ordp', 'Workers', 'color', 'token', 'meanTkPop']),  # 4
                      ('ordp_jobs_meanTkPop', ['yaml', 'ordp', 'Jobs', 'color', 'token', 'meanTkPop']),  # 5
                      ('doqp_stage_meanTkPop', ['yaml', 'doqp', 'Stage', 'color', 'token', 'meanTkPop']),  # 6
@@ -165,11 +176,11 @@ class SimulationExecutor:
                     results.append(str(entry_content))
 
             # 1-(WorkerTokens/#Worker)
-            results.append(1 - (float(results[4]) / float(results[2])))
+            results.append(1 - (float(results[4]) / float(results[3])))
 
             # TokenPop(Jobs/Stage)/#Jobs/ArrivalRate
             results.append((float(results[5]) + float(results[6])
-                            + float(results[7]))/float(results[3])/float(results[8]))
+                            + float(results[7]))/float(results[2])/float(results[8]))
 
             # 'credits': (mean stage duration * stage arrival count)
             results.append(float(results[9]) * float(results[10]))
@@ -180,10 +191,10 @@ class SimulationExecutor:
         return df
 
     @staticmethod
-    def do_run(param_array: np.ndarray) -> pd.DataFrame:
+    def do_run(param_array: np.ndarray, iteration: int) -> pd.DataFrame:
         # rows, columns = param_array.shape
         # print(f'Starting {rows} experiments.')
-        settings = SimulationExecutor.create_settings_from_array(param_array)
+        settings = SimulationExecutor.create_settings_from_array(param_array, iteration)
         config_files = SimulationExecutor.create_config_files(settings)
         experiments = SimulationExecutor.run_docker_experiments(config_files)
         return SimulationExecutor.parse_experiments(experiments)
