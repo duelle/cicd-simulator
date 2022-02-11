@@ -40,7 +40,8 @@ class NsgaTwo:
         })
 
         problem = PipelineCostResourceProblem(lower_limits, upper_limits, constraint_limit)
-        algorithm = NSGA2(pop_size=population_size, sampling=sampling, mutation=mutation, crossover=crossover, eliminate_duplicates=True)
+        algorithm = NSGA2(pop_size=population_size, sampling=sampling,
+                          mutation=mutation, crossover=crossover, eliminate_duplicates=True)
         termination = get_termination("n_gen", generations)
 
         res = minimize(problem,

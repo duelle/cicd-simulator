@@ -27,6 +27,9 @@ class SimulationExecutor:
 
     default_cpu = 2
     default_ram = 4
+    cpu = None
+    ram = None
+
 
     # job_range = range(1, 41, 5)
     # job_range = [1]
@@ -45,11 +48,11 @@ class SimulationExecutor:
 
     @staticmethod
     def set_cpu(cpu):
-        SimulationExecutor.default_cpu = cpu
+        SimulationExecutor.cpu = cpu
 
     @staticmethod
     def set_ram(ram):
-        SimulationExecutor.default_ram = ram
+        SimulationExecutor.ram = ram
 
     @staticmethod
     def create_settings_from_array(settings_array: np.ndarray, iteration: int) -> {}:
@@ -94,10 +97,17 @@ class SimulationExecutor:
         return config_files
 
     @staticmethod
-    def docker_run(config, cpus=default_cpu, ram=default_ram, verbose=False):
+    def docker_run(config, verbose=False):
+        if SimulationExecutor.cpu and SimulationExecutor.ram:
+            cpu = SimulationExecutor.cpu
+            ram = SimulationExecutor.ram
+        else:
+            cpu = SimulationExecutor.default_cpu
+            ram = SimulationExecutor.default_ram
+
         docker_image = 'qpme_experiment:latest'
         before_time = datetime.datetime.now()
-        subprocess.run(['docker', 'run', '-m', f'{ram}G', '--cpus', f'{cpus}', '-v',
+        subprocess.run(['docker', 'run', '-m', f'{ram}G', '--cpus', f'{cpu}', '-v',
                         f'{SimulationExecutor.base_dir}/{config}:/tmp/experiment', docker_image])
         after_time = datetime.datetime.now()
         time_diff = after_time - before_time
