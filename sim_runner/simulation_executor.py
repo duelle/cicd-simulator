@@ -5,6 +5,8 @@ import pprint
 import re
 import shutil
 import subprocess
+import sys
+
 import yaml
 
 import multiprocessing as mp
@@ -176,28 +178,40 @@ class SimulationExecutor:
             with open(f'''{experiments[e]['basedir']}/{experiments[e]['yaml_file']}''') as yaml_content:
                 experiments[e]['yaml'] = yaml.safe_load(yaml_content)
 
+            broken = False
             results = []
+
             for entry in entry_set:
                 if entry[1]:
                     entry_path = entry[1]
                     entry_content = experiments[e]
                     for element in entry_path:
-                        entry_content = entry_content[element]
+                        if not entry_content[element]:
+                            broken = True
+                            entry_content = 1
+                            break
+                        else:
+                            entry_content = entry_content[element]
                     results.append(str(entry_content))
 
-            # 1-(WorkerTokens/#Worker)
-            results.append(1 - (float(results[4]) / float(results[3])))
+            if broken:
+                results.extend([10, sys.float_info.max, sys.float_info.max])
 
-            # TokenPop(Jobs/Stage)/#Jobs/ArrivalRate
-            results.append((float(results[5]) + float(results[6])
-                            + float(results[7]))/float(results[2])/float(results[8]))
+            else:
+                # 1-(WorkerTokens/#Worker)
+                results.append(1 - (float(results[4]) / float(results[3])))
 
-            # 'credits': (mean stage duration * stage arrival count)
-            results.append(float(results[9]) * float(results[10]))
+                # TokenPop(Jobs/Stage)/#Jobs/ArrivalRate
+                results.append((float(results[5]) + float(results[6])
+                                + float(results[7]))/float(results[2])/float(results[8]))
+
+                # 'credits': (mean stage duration * stage arrival count)
+                results.append(float(results[9]) * float(results[10]))
 
             data_rows.append(results)
 
         df = pd.DataFrame(np.array(data_rows), columns=header)
+        df.to_csv('/tmp/data_rows.csv')
         return df
 
     @staticmethod
