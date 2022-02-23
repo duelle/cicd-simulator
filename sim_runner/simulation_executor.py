@@ -108,9 +108,14 @@ class SimulationExecutor:
             ram = SimulationExecutor.default_ram
 
         docker_image = 'qpme_experiment:latest'
+        process_timeout = 55
+        process_killout = 5
         before_time = datetime.datetime.now()
         subprocess.run(['docker', 'run', '-m', f'{ram}G', '--cpus', f'{cpu}', '-v',
-                        f'{SimulationExecutor.base_dir}/{config}:/tmp/experiment', docker_image])
+                        f'{SimulationExecutor.base_dir}/{config}:/tmp/experiment',
+                        '-e', f'TIMEOUT={process_timeout}',
+                        '-e', f'KILLOUT={process_killout}',
+                        docker_image])
         after_time = datetime.datetime.now()
         time_diff = after_time - before_time
         if verbose:
@@ -186,12 +191,13 @@ class SimulationExecutor:
                     entry_path = entry[1]
                     entry_content = experiments[e]
                     for element in entry_path:
-                        if not entry_content[element]:
+                        try:
+                            entry_content = entry_content[element]
+                        except KeyError:
                             broken = True
                             entry_content = 1
                             break
-                        else:
-                            entry_content = entry_content[element]
+
                     results.append(str(entry_content))
 
             if broken:
@@ -207,6 +213,7 @@ class SimulationExecutor:
 
                 # 'credits': (mean stage duration * stage arrival count)
                 results.append(float(results[9]) * float(results[10]))
+
 
             data_rows.append(results)
 
