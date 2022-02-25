@@ -108,8 +108,8 @@ class SimulationExecutor:
             ram = SimulationExecutor.default_ram
 
         docker_image = 'qpme_experiment:latest'
-        process_timeout = 55
-        process_killout = 5
+        process_timeout = 5400
+        process_killout = 100
         before_time = datetime.datetime.now()
         subprocess.run(['docker', 'run', '-m', f'{ram}G', '--cpus', f'{cpu}', '-v',
                         f'{SimulationExecutor.base_dir}/{config}:/tmp/experiment',
