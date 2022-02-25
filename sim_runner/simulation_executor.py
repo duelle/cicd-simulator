@@ -201,7 +201,7 @@ class SimulationExecutor:
                     results.append(str(entry_content))
 
             # In case fields are not populated or the meanST property is negative, we mark the results as defective
-            if broken or float(results[9] < 0):
+            if broken or (float(results[9]) < 0):
                 results.extend([10, sys.float_info.max, sys.float_info.max])
 
             else:
