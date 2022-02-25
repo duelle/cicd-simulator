@@ -86,7 +86,9 @@ class NsgaTwo:
 
         optimal = []
         for index, row in x_df.iterrows():
-            rindex = df[(df.in_jobs == row.in_jobs) & (df.in_workers == row.in_workers) & (df.in_arrival == row.in_arrival)].index
+            rindex = df[(df.in_jobs == row.in_jobs) &
+                        (df.in_workers == row.in_workers) &
+                        (df.in_arrival == row.in_arrival)].index
             cindex = df.optimal.index
             df.loc[rindex, 'optimal'] = 1
             # entry['optional'] = 1

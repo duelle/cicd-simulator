@@ -200,7 +200,8 @@ class SimulationExecutor:
 
                     results.append(str(entry_content))
 
-            if broken:
+            # In case fields are not populated or the meanST property is negative, we mark the results as defective
+            if broken or float(results[9] < 0):
                 results.extend([10, sys.float_info.max, sys.float_info.max])
 
             else:
@@ -213,7 +214,6 @@ class SimulationExecutor:
 
                 # 'credits': (mean stage duration * stage arrival count)
                 results.append(float(results[9]) * float(results[10]))
-
 
             data_rows.append(results)
 
