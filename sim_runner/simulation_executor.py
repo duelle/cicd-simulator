@@ -20,7 +20,7 @@ from parser.qpme_output_parser import QPMEOutputParser
 class SimulationExecutor:
 
     base_dir = r'/tmp'
-    config_template = Path(__file__).parent / 'ci_auto.qpe'
+    config_template = Path(__file__).parent / 'ci_auto_rel.qpe'
     arrival_pattern = '#exp_arrival#'
     job_pattern = '1234567890'
     worker_pattern = '1234567891'
@@ -172,6 +172,7 @@ class SimulationExecutor:
                      ('utilization', None),
                      ('build_duration', None),
                      ('credit_usage', None),
+                     # ('portability_checks', None),
                      ]
         header = [entry[0] for entry in entry_set]
 
@@ -214,6 +215,9 @@ class SimulationExecutor:
 
                 # 'credits': (mean stage duration * stage arrival count)
                 results.append(float(results[9]) * float(results[10]))
+
+                # 'portability_checks': log...?
+                # results.append()
 
             data_rows.append(results)
 
