@@ -113,6 +113,7 @@ class SimulationExecutor:
         before_time = datetime.datetime.now()
         subprocess.run(['docker', 'run', '-m', f'{ram}G', '--cpus', f'{cpu}', '-v',
                         f'{SimulationExecutor.base_dir}/{config}:/tmp/experiment',
+                        '--restart=no',
                         '-e', f'TIMEOUT={process_timeout}',
                         '-e', f'KILLOUT={process_killout}',
                         docker_image])
