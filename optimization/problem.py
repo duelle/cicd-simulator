@@ -17,7 +17,7 @@ class PipelineCostResourceProblem(Problem):
         self.__constraint_limit: float = constraint_limit
 
         # super().__init__(n_var=5, n_obj=2, n_constr=1, xl=self.__xl, xu=self.__xu)
-        super().__init__(n_var=4, n_obj=2, n_constr=1, xl=self.__xl, xu=self.__xu)
+        super().__init__(n_var=4, n_obj=3, n_constr=1, xl=self.__xl, xu=self.__xu)
 
     def _evaluate(self, x, out, *args, **kwargs):
         pop_size = np.size(x, 0)
@@ -26,7 +26,11 @@ class PipelineCostResourceProblem(Problem):
         results = SimulationExecutor.do_run(x, self.__iteration)
         results['build_duration'] = results['build_duration'].astype(float)
         results['credit_usage'] = results['credit_usage'].astype(float)
-        result_array = np.column_stack((results['build_duration'], results['credit_usage']))
+        # Make the value vor portability_check_factor negative. As 'the lower the value, the better'.
+        results['portability_checks'] = -results['portability_check_factor'].astype(float)
+        result_array = np.column_stack((results['build_duration'],
+                                        results['credit_usage'],
+                                        results['portability_check_factor']))
         out["F"] = result_array
 
         results['utilization'] = results['utilization'].astype(float)

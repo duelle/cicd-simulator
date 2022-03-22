@@ -1,5 +1,6 @@
 import datetime
 import json
+import math
 import os
 import pprint
 import re
@@ -173,7 +174,7 @@ class SimulationExecutor:
                      ('utilization', None),
                      ('build_duration', None),
                      ('credit_usage', None),
-                     # ('portability_checks', None),
+                     ('portability_check_factor', None),
                      ]
         header = [entry[0] for entry in entry_set]
 
@@ -218,7 +219,7 @@ class SimulationExecutor:
                 results.append(float(results[9]) * float(results[10]))
 
                 # 'portability_checks': log...?
-                # results.append()
+                results.append(math.log(float(results[2])))
 
             data_rows.append(results)
 
