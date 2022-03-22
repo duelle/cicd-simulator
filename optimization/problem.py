@@ -27,7 +27,7 @@ class PipelineCostResourceProblem(Problem):
         results['build_duration'] = results['build_duration'].astype(float)
         results['credit_usage'] = results['credit_usage'].astype(float)
         # Make the value vor portability_check_factor negative. As 'the lower the value, the better'.
-        results['portability_checks'] = -results['portability_check_factor'].astype(float)
+        results['portability_check_factor'] = -results['portability_check_factor'].astype(float)
         result_array = np.column_stack((results['build_duration'],
                                         results['credit_usage'],
                                         results['portability_check_factor']))
