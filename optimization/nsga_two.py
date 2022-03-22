@@ -73,6 +73,7 @@ class NsgaTwo:
                       'utilization',
                       'build_duration',
                       'credit_usage',
+                      'portability_check_factor',
                       'constraint']
         np.set_printoptions(precision=20)
         pd.set_option("display.precision", 20)
